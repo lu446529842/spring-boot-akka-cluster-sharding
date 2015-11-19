@@ -21,11 +21,14 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import scala.concurrent.duration.Duration;
 
+import java.util.Optional;
+
 import static akka.actor.SupervisorStrategy.*;
 
 @Configuration
+//@Lazy
 /*
-@Lazy
+
 @ComponentScan(basePackages = {"com.cgi.garnet.attachment.config",
         "com.cgi.garnet.attachment.rest", "com.cgi.garnet.attachment.service"})
 */
@@ -62,9 +65,7 @@ public class AkkaConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public ClusterShardingSettings initClusterShardingSettings(){
-        Option<String> roleOption = Option.none();
-        ClusterShardingSettings settings = ClusterShardingSettings.create(actorSystem());
-        return  settings;
+        return ClusterShardingSettings.create(actorSystem()).withRole("defService");
     }
 
 
@@ -121,6 +122,15 @@ public class AkkaConfig extends WebMvcConfigurerAdapter {
         return clusterSharding().start("defEventStoreSupervisor", defEventStoreSupervisorProps(), initClusterShardingSettings(), defShardignessageExtractor());
     }
 
+    @Bean
+    public ActorRef abcEventStoreActorShardRegion() {
+        return clusterSharding().startProxy("abcEventStoreActor",Optional.of("abcService") , defShardignessageExtractor());
+    }
+
+    @Bean
+    public ActorRef abcEventStoreSupervisorShardRegion() {
+        return clusterSharding().startProxy("abcEventStoreSupervisor", Optional.of("abcService"), defShardignessageExtractor());
+    }
 
     @Bean
     @Scope(value = "prototype")

@@ -21,9 +21,12 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import scala.concurrent.duration.Duration;
 
+import java.util.Optional;
+
 import static akka.actor.SupervisorStrategy.*;
 
 @Configuration
+//@Lazy
 /*
 @Lazy
 @ComponentScan(basePackages = {"com.cgi.garnet.attachment.config",
@@ -62,9 +65,7 @@ public class AkkaConfig extends WebMvcConfigurerAdapter {
 
     @Bean
     public ClusterShardingSettings initClusterShardingSettings(){
-        Option<String> roleOption = Option.none();
-        ClusterShardingSettings settings = ClusterShardingSettings.create(actorSystem());
-        return  settings;
+        return ClusterShardingSettings.create(actorSystem()).withRole("abcService");
     }
 
 
@@ -116,11 +117,26 @@ public class AkkaConfig extends WebMvcConfigurerAdapter {
         return clusterSharding().start("abcEventStoreActor", abcEventStoreActorProps(), initClusterShardingSettings(), abcShardignessageExtractor());
     }
 
+
     @Bean
     public ActorRef abcEventStoreSupervisorShardRegion() {
         return clusterSharding().start("abcEventStoreSupervisor", abcEventStoreSupervisorProps(), initClusterShardingSettings(), abcShardignessageExtractor());
     }
+    /*
+    This optional if we need to send messages directly to the def service probably we can use the proxy approach. This example mainly demonstrates pub/sub model.
+     */
+    @Bean
+    public ActorRef defEventStoreActorShardRegion() {
+        return clusterSharding().startProxy("defEventStoreActor", Optional.of("defService"), abcShardignessageExtractor());
+    }
 
+    /*
+    This optional if we need to send messages directly to the def service probably we can use the proxy approach. This example mainly demonstrates pub/sub model.
+     */
+    @Bean
+    public ActorRef defEventStoreSupervisorShardRegion() {
+        return clusterSharding().startProxy("defEventStoreSupervisor",Optional.of("defService"),abcShardignessageExtractor());
+    }
 
     @Bean
     @Scope(value = "prototype")
